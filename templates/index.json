@@ -4,7 +4,8 @@
       "type": "pd-hero",
       "settings": {
         "eyebrow": "Veteran-owned & operated",
-        "heading": "Wear the <em>Mission.</em>",
+        "heading": "Wear the",
+        "heading_accent": "Mission.",
         "subheading": "No veteran should be forgotten.",
         "body": "<p>Create apparel that honors service, celebrates military families and keeps the mission visible.</p>",
         "button_1_label": "Create your gear",
@@ -41,8 +42,7 @@
       "block_order": ["step_1", "step_2", "step_3"],
       "settings": {
         "heading": "Create your gear",
-        "text": "<p>Design apparel that delivers your message with purpose.</p>",
-        "button_label": ""
+        "text": "<p>Design apparel that delivers your message with purpose.</p>"
       }
     },
     "pd_categories": {
@@ -125,7 +125,8 @@
       },
       "block_order": ["pillar_honor", "pillar_awareness", "pillar_action"],
       "settings": {
-        "heading": "Your gear. Your message. <em>Our mission.</em>",
+        "heading": "Your gear. Your message.",
+        "heading_accent": "Our mission.",
         "text": "<p>Phonetic Designs is a veteran-owned and operated apparel brand. Our name comes from the military phonetic call numbers (wun, too, tree) used across NATO forces to send messages clearly. We put those call numbers on apparel that honors service, celebrates military families and keeps veteran homelessness visible.</p>",
         "button_label": "Our mission"
       }
@@ -143,7 +144,7 @@
         "faq_phonetic": {
           "type": "question",
           "settings": {
-            "question": "What does \"phonetic\" mean?",
+            "question": "What does phonetic mean?",
             "answer": "<p>Militaries in NATO nations use call letters and numbers to send verbal messages clearly: wun, too, tree, fower, fife, siks, seven, ait, niner, zeero. Phonetic Designs puts those call numbers on apparel in place of ordinary numbers.</p>"
           }
         },

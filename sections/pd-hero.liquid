@@ -34,7 +34,10 @@
       {%- endif -%}
 
       <h1 id="PdHeroHeading-{{ section.id }}" class="pd-display pd-hero__title">
-        {{ section.settings.heading }}
+        {{ section.settings.heading | escape }}
+        {%- if section.settings.heading_accent != blank %}
+          <em>{{ section.settings.heading_accent | escape }}</em>
+        {%- endif %}
       </h1>
 
       {%- if section.settings.subheading != blank -%}
@@ -361,11 +364,16 @@
       "default": "Veteran-owned & operated"
     },
     {
-      "type": "inline_richtext",
+      "type": "text",
       "id": "heading",
       "label": "Headline",
-      "info": "Italic words are shown in gold.",
-      "default": "Wear the <em>Mission.</em>"
+      "default": "Wear the"
+    },
+    {
+      "type": "text",
+      "id": "heading_accent",
+      "label": "Headline gold words",
+      "default": "Mission."
     },
     {
       "type": "text",

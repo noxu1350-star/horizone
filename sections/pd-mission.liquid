@@ -24,7 +24,10 @@
       </div>
 
       <div class="pd-mission__copy">
-        <h2 id="PdMissionHeading-{{ section.id }}" class="pd-display pd-mission__title">{{ section.settings.heading }}</h2>
+        <h2 id="PdMissionHeading-{{ section.id }}" class="pd-display pd-mission__title">
+          {{- section.settings.heading | escape -}}
+          {%- if section.settings.heading_accent != blank %} <em>{{ section.settings.heading_accent | escape }}</em>{% endif -%}
+        </h2>
         {%- if section.settings.text != blank -%}
           <div class="pd-mission__text">{{ section.settings.text }}</div>
         {%- endif -%}
@@ -269,11 +272,16 @@
   "max_blocks": 4,
   "settings": [
     {
-      "type": "inline_richtext",
+      "type": "text",
       "id": "heading",
       "label": "Heading",
-      "info": "Italic words are shown in gold.",
-      "default": "Your gear. Your message. <em>Our mission.</em>"
+      "default": "Your gear. Your message."
+    },
+    {
+      "type": "text",
+      "id": "heading_accent",
+      "label": "Heading gold words",
+      "default": "Our mission."
     },
     {
       "type": "richtext",
