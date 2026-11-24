@@ -1,0 +1,583 @@
+{%- liquid
+  assign socials = 'facebook,instagram,tiktok,youtube,x' | split: ','
+  assign has_social = false
+  for s in socials
+    assign key = 'social_' | append: s
+    if section.settings[key] != blank
+      assign has_social = true
+    endif
+  endfor
+-%}
+
+<div class="pd pd-footer">
+  <div class="pd-footer__stripe" aria-hidden="true"></div>
+
+  <div class="pd__inner pd-footer__top">
+    <div class="pd-footer__brand">
+      <a class="pd-footer__logo" href="{{ routes.root_url }}">
+        {%- if section.settings.logo != blank -%}
+          {{
+            section.settings.logo
+            | image_url: width: 360
+            | image_tag: loading: 'lazy', widths: '180, 270, 360', sizes: '180px', alt: shop.name
+          }}
+        {%- else -%}
+          <span class="pd-footer__shield" aria-hidden="true">{% render 'pd-icon', icon: 'shield' %}</span>
+          <span class="pd-footer__name">{{ shop.name }}</span>
+        {%- endif -%}
+      </a>
+
+      {%- if section.settings.tagline != blank -%}
+        <p class="pd-display pd-footer__tagline">{{ section.settings.tagline | escape }}</p>
+      {%- endif -%}
+      {%- if section.settings.text != blank -%}
+        <div class="pd-footer__text">{{ section.settings.text }}</div>
+      {%- endif -%}
+
+      {%- if section.settings.email != blank or section.settings.phone != blank -%}
+        <ul class="pd-footer__contact" role="list">
+          {%- if section.settings.email != blank -%}
+            <li>
+              <a href="mailto:{{ section.settings.email | escape }}">
+                {% render 'pd-icon', icon: 'mail' %}
+                <span>{{ section.settings.email | escape }}</span>
+              </a>
+            </li>
+          {%- endif -%}
+          {%- if section.settings.phone != blank -%}
+            <li>
+              <a href="tel:{{ section.settings.phone | remove: ' ' | remove: '-' | remove: '(' | remove: ')' }}">
+                {% render 'pd-icon', icon: 'phone' %}
+                <span>{{ section.settings.phone | escape }}</span>
+              </a>
+            </li>
+          {%- endif -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if has_social -%}
+        <ul class="pd-footer__social" role="list">
+          {%- for s in socials -%}
+            {%- assign key = 'social_' | append: s -%}
+            {%- if section.settings[key] != blank -%}
+              <li>
+                <a href="{{ section.settings[key] }}" target="_blank" rel="noopener" aria-label="{{ s | capitalize }}">
+                  {% render 'pd-icon', icon: s %}
+                </a>
+              </li>
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </div>
+
+    <nav class="pd-footer__cols" aria-label="Footer">
+      {%- for block in section.blocks -%}
+        {%- assign menu = block.settings.menu -%}
+        <div class="pd-footer__col" {{ block.shopify_attributes }}>
+          <p class="pd-footer__heading">{{ block.settings.heading | default: menu.title | escape }}</p>
+          <ul role="list">
+            {%- if menu != blank and menu.links.size > 0 -%}
+              {%- for link in menu.links -%}
+                <li><a href="{{ link.url }}">{{ link.title | escape }}</a></li>
+              {%- endfor -%}
+            {%- else -%}
+              {%- comment -%} Starter links until a menu is chosen {%- endcomment -%}
+              {%- case forloop.index -%}
+                {%- when 1 -%}
+                  <li><a href="{{ routes.all_products_collection_url }}">Create your gear</a></li>
+                  <li><a href="{{ routes.all_products_collection_url }}">Shop all</a></li>
+                  <li><a href="{{ routes.collections_url }}">Collections</a></li>
+                {%- when 2 -%}
+                  <li><a href="{{ routes.root_url }}#FAQ">FAQ</a></li>
+                  <li><a href="{{ routes.account_url }}">Order tracking</a></li>
+                  <li><a href="{{ routes.cart_url }}">Cart</a></li>
+                {%- else -%}
+                  <li><a href="{{ routes.root_url }}">Our mission</a></li>
+                  <li><a href="{{ routes.root_url }}">About the founder</a></li>
+                  <li><a href="{{ routes.root_url }}#FAQ">Veteran-owned business</a></li>
+              {%- endcase -%}
+            {%- endif -%}
+          </ul>
+        </div>
+      {%- endfor -%}
+    </nav>
+
+    {%- if section.settings.show_newsletter -%}
+      <div class="pd-footer__news">
+        <p class="pd-footer__heading">{{ section.settings.newsletter_heading | escape }}</p>
+        {%- if section.settings.newsletter_text != blank -%}
+          <p class="pd-footer__news-text">{{ section.settings.newsletter_text | escape }}</p>
+        {%- endif -%}
+        {%- form 'customer', id: 'PdFooterNews', class: 'pd-footer__form' -%}
+          <input type="hidden" name="contact[tags]" value="newsletter">
+          <label class="visually-hidden" for="PdFooterEmail-{{ section.id }}">Email</label>
+          <input
+            id="PdFooterEmail-{{ section.id }}"
+            type="email"
+            name="contact[email]"
+            placeholder="Your email"
+            autocomplete="email"
+            required
+          >
+          <button type="submit" class="pd-btn pd-btn--primary">
+            {{- section.settings.newsletter_button | escape -}}
+          </button>
+          {%- if form.posted_successfully? -%}
+            <p class="pd-footer__msg" role="status">Thanks for joining the mission.</p>
+          {%- elsif form.errors -%}
+            <p class="pd-footer__msg pd-footer__msg--error" role="alert">{{ form.errors.messages['email'] | default: 'Please enter a valid email.' }}</p>
+          {%- endif -%}
+        {%- endform -%}
+      </div>
+    {%- endif -%}
+  </div>
+
+  <div class="pd-footer__bottom">
+    <div class="pd__inner pd-footer__bottom-inner">
+      <p class="pd-footer__copy">
+        &copy; {{ 'now' | date: '%Y' }} {{ shop.name | escape }}
+        {%- if section.settings.copyright_note != blank %} · {{ section.settings.copyright_note | escape }}{% endif %}
+      </p>
+
+      {%- if shop.policies.size > 0 -%}
+        <ul class="pd-footer__policies" role="list">
+          {%- for policy in shop.policies -%}
+            <li><a href="{{ policy.url }}">{{ policy.title | escape }}</a></li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if section.settings.show_payment and shop.enabled_payment_types.size > 0 -%}
+        <ul class="pd-footer__pay" role="list" aria-label="Accepted payment methods">
+          {%- for type in shop.enabled_payment_types -%}
+            <li>{{ type | payment_type_svg_tag }}</li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .pd-footer {
+    position: relative;
+    background:
+      radial-gradient(ellipse 60% 80% at 100% 0%, rgb(70 130 220 / 0.12), transparent 60%),
+      #070e1a;
+    font-size: 0.92rem;
+  }
+
+  /* Thin red-white-blue line across the top */
+  .pd-footer__stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #a3243a 0 33.3%, #e8e8e8 33.3% 66.6%, #24407a 66.6%);
+    opacity: 0.85;
+  }
+
+  .pd-footer a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .pd-footer a:hover {
+    color: var(--pd-gold);
+  }
+
+  .pd-footer__top {
+    display: grid;
+    gap: 40px;
+    padding-block: clamp(44px, 6vw, 72px);
+  }
+
+  .pd-footer__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pd-footer__logo img {
+    display: block;
+    max-width: 180px;
+    height: auto;
+  }
+
+  .pd-footer__shield {
+    width: 40px;
+    height: 40px;
+    color: var(--pd-gold);
+  }
+
+  .pd-footer__shield svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pd-footer__name {
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 1.25rem;
+  }
+
+  .pd-footer__tagline {
+    font-size: 1.6rem;
+    color: var(--pd-gold);
+    margin-top: 18px;
+  }
+
+  .pd-footer__text {
+    color: var(--pd-muted);
+    line-height: 1.6;
+    max-width: 340px;
+    margin-top: 10px;
+  }
+
+  .pd-footer__text p {
+    margin: 0;
+  }
+
+  .pd-footer__contact,
+  .pd-footer__social,
+  .pd-footer__cols ul,
+  .pd-footer__policies,
+  .pd-footer__pay {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pd-footer__contact {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .pd-footer__contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    word-break: break-word;
+  }
+
+  .pd-footer__contact svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    color: var(--pd-gold);
+  }
+
+  .pd-footer__social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .pd-footer__social a {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--pd-line);
+    border-radius: 50%;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+
+  .pd-footer__social a:hover {
+    border-color: var(--pd-gold);
+    transform: translateY(-2px);
+  }
+
+  .pd-footer__social svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .pd-footer__cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 24px;
+  }
+
+  .pd-footer__heading {
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.85rem;
+    color: var(--pd-text);
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    position: relative;
+  }
+
+  .pd-footer__heading::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    height: 2px;
+    background: var(--pd-gold);
+  }
+
+  .pd-footer__cols ul {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pd-footer__cols a {
+    color: var(--pd-muted);
+  }
+
+  .pd-footer__news-text {
+    color: var(--pd-muted);
+    line-height: 1.55;
+    margin: 0 0 14px;
+  }
+
+  .pd-footer__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pd-footer__form input[type='email'] {
+    flex: 1 1 180px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0 14px;
+    font: inherit;
+    color: var(--pd-text);
+    background: var(--pd-navy-2);
+    border: 1px solid var(--pd-line);
+    border-radius: 3px;
+  }
+
+  .pd-footer__form input[type='email']::placeholder {
+    color: rgb(from var(--pd-text) r g b / 0.5);
+  }
+
+  .pd-footer__form input[type='email']:focus {
+    outline: none;
+    border-color: var(--pd-gold);
+  }
+
+  .pd-footer__form .pd-btn {
+    flex: 0 0 auto;
+  }
+
+  .pd-footer__msg {
+    flex-basis: 100%;
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--pd-gold);
+  }
+
+  .pd-footer__msg--error {
+    color: #ff8a8a;
+  }
+
+  .pd-footer__bottom {
+    border-top: 1px solid var(--pd-line);
+  }
+
+  .pd-footer__bottom-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 24px;
+    padding-block: 20px;
+    font-size: 0.8rem;
+    color: var(--pd-muted);
+  }
+
+  .pd-footer__copy {
+    margin: 0;
+  }
+
+  .pd-footer__policies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+
+  .pd-footer__pay {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pd-footer__pay svg {
+    display: block;
+    width: 38px;
+    height: 24px;
+  }
+
+  @media (min-width: 750px) {
+    .pd-footer__cols {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 990px) {
+    .pd-footer__top {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: 56px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "PD · Footer",
+  "tag": "footer",
+  "class": "pd-section",
+  "enabled_on": {
+    "groups": ["footer"]
+  },
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo",
+      "info": "Light or white logo works best on navy. Shop name is shown if empty."
+    },
+    {
+      "type": "text",
+      "id": "tagline",
+      "label": "Tagline",
+      "default": "Wear the Mission."
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Veteran-owned apparel that honors service, celebrates military families and keeps the mission visible.</p>"
+    },
+    {
+      "type": "header",
+      "content": "Contact"
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "Support email"
+    },
+    {
+      "type": "text",
+      "id": "phone",
+      "label": "Phone"
+    },
+    {
+      "type": "header",
+      "content": "Social links"
+    },
+    {
+      "type": "url",
+      "id": "social_facebook",
+      "label": "Facebook",
+      "info": "Icons only show for filled-in links."
+    },
+    {
+      "type": "url",
+      "id": "social_instagram",
+      "label": "Instagram"
+    },
+    {
+      "type": "url",
+      "id": "social_tiktok",
+      "label": "TikTok"
+    },
+    {
+      "type": "url",
+      "id": "social_youtube",
+      "label": "YouTube"
+    },
+    {
+      "type": "url",
+      "id": "social_x",
+      "label": "X (Twitter)"
+    },
+    {
+      "type": "header",
+      "content": "Newsletter"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_newsletter",
+      "label": "Show newsletter signup",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "newsletter_heading",
+      "label": "Heading",
+      "default": "Join the mission"
+    },
+    {
+      "type": "text",
+      "id": "newsletter_text",
+      "label": "Text",
+      "default": "New designs, veteran stories and early access."
+    },
+    {
+      "type": "text",
+      "id": "newsletter_button",
+      "label": "Button label",
+      "default": "Sign up"
+    },
+    {
+      "type": "header",
+      "content": "Bottom bar"
+    },
+    {
+      "type": "text",
+      "id": "copyright_note",
+      "label": "Copyright note",
+      "default": "Veteran-owned & operated"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment",
+      "label": "Show payment icons",
+      "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "menu",
+      "name": "Link column",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Shop"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Menu",
+          "info": "Starter links are shown until you choose a menu."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "PD · Footer",
+      "blocks": [
+        { "type": "menu", "settings": { "heading": "Shop" } },
+        { "type": "menu", "settings": { "heading": "Customer care" } },
+        { "type": "menu", "settings": { "heading": "About" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
