@@ -1,0 +1,134 @@
+{%- comment -%}
+  Phonetic Designs branded placeholder artwork (shown until a real image is uploaded).
+  Usage: {% render 'pd-placeholder', type: 'tshirt', color: '#1b2740', uid: block.id, class: 'pd-cat__img' %}
+  Optional: label (text under the emblem on the 'design' tile, e.g. a branch name)
+  Types: tshirt, hoodie, hat, pants, design, flag
+{%- endcomment -%}
+{%- liquid
+  assign c = color | default: '#1b2740'
+  assign u = 'pdph-' | append: type | append: '-' | append: uid
+  assign gold = settings.pd_gold | default: '#e2b74a'
+-%}
+{%- capture shade_defs -%}
+  <linearGradient id="{{ u }}-shade" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#000" stop-opacity=".45"/>
+    <stop offset=".3" stop-color="#000" stop-opacity="0"/>
+    <stop offset=".55" stop-color="#fff" stop-opacity=".07"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+  </linearGradient>
+  <linearGradient id="{{ u }}-v" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity=".08"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".3"/>
+  </linearGradient>
+{%- endcapture -%}
+{%- capture emblem -%}
+  <path d="M100 8l84 26v62c0 58-37 101-84 126C53 197 16 154 16 96V34L100 8z" fill="#0d1526" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M100 30l64 20v46c0 46-28 80-64 101-36-21-64-55-64-101V50l64-20z" fill="none" stroke="{{ gold }}" stroke-width="5"/>
+  <path d="M100 66l10 20 22 3-16 15.5 3.8 22L100 116l-19.8 10.5 3.8-22L68 89l22-3L100 66z" fill="#fff"/>
+  <path d="M60 150h80" stroke="#c8334a" stroke-width="10" stroke-linecap="round"/>
+{%- endcapture -%}
+
+{%- case type -%}
+  {%- when 'tshirt' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 200 200" role="img" aria-label="T-shirt placeholder" preserveAspectRatio="xMidYMax meet">
+      <defs>{{ shade_defs }}</defs>
+      {%- assign body = 'M74 24C84 32 116 32 126 24L160 38C168 41 174 47 178 55L192 86 164 98 154 78V184C120 190 80 190 46 184V78L36 98 8 86 22 55C26 47 32 41 40 38Z' -%}
+      <path d="{{ body }}" fill="{{ c }}"/>
+      <path d="{{ body }}" fill="url(#{{ u }}-shade)"/>
+      <path d="{{ body }}" fill="url(#{{ u }}-v)"/>
+      <path d="M74 24C84 38 116 38 126 24" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="5"/>
+      <path d="M46 78C48 62 46 50 40 38M154 78C152 62 154 50 160 38" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.5"/>
+      <text x="100" y="66" text-anchor="middle" font-family="Oswald, Impact, Arial Narrow, sans-serif" font-weight="700" font-size="10" letter-spacing="1.5" fill="#fff">NO VETERAN</text>
+      <g transform="translate(100 98) scale(.27) translate(-100 -115)">{{ emblem }}</g>
+      <text x="100" y="138" text-anchor="middle" font-family="Oswald, Impact, Arial Narrow, sans-serif" font-weight="700" font-size="6.5" letter-spacing="1" fill="#fff" fill-opacity=".85">SHOULD BE FORGOTTEN</text>
+    </svg>
+
+  {%- when 'hoodie' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 200 200" role="img" aria-label="Hoodie placeholder" preserveAspectRatio="xMidYMax meet">
+      <defs>
+        {{ shade_defs }}
+        <pattern id="{{ u }}-stripes" width="5.4" height="10" patternUnits="userSpaceOnUse">
+          <rect width="2.7" height="10" fill="#c8334a"/>
+          <rect x="2.7" width="2.7" height="10" fill="#e9e9e9"/>
+        </pattern>
+      </defs>
+      {%- assign body = 'M70 30C78 14 122 14 130 30L162 44C172 48 178 58 180 70L190 170 166 174 158 92H154V188C120 194 80 194 46 188V92H42L34 174 10 170 20 70C22 58 28 48 38 44Z' -%}
+      <path d="{{ body }}" fill="{{ c }}"/>
+      <path d="{{ body }}" fill="url(#{{ u }}-shade)"/>
+      <path d="{{ body }}" fill="url(#{{ u }}-v)"/>
+      <path d="M78 34C82 20 118 20 122 34 116 54 84 54 78 34Z" fill="#000" fill-opacity=".5"/>
+      <path d="M92 50 90 82M108 50l2 32" stroke="#ddd" stroke-width="2" stroke-linecap="round"/>
+      <path d="M66 146H134L142 178H58Z" fill="#fff" fill-opacity=".03" stroke="#000" stroke-opacity=".35" stroke-width="1.5"/>
+      <path d="M46 182C80 188 120 188 154 182M12 162l22 4M188 162l-22 4" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="3"/>
+      <rect x="84" y="80" width="32" height="44" fill="url(#{{ u }}-stripes)"/>
+      <rect x="84" y="80" width="13" height="18" fill="#24407a"/>
+      <rect x="84" y="80" width="32" height="44" fill="none" stroke="#000" stroke-opacity=".2"/>
+      <text x="100" y="134" text-anchor="middle" font-family="Oswald, Impact, Arial Narrow, sans-serif" font-weight="700" font-size="4.6" letter-spacing=".8" fill="#fff" fill-opacity=".85">HONOR · AWARENESS · ACTION</text>
+    </svg>
+
+  {%- when 'hat' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 200 200" role="img" aria-label="Hat placeholder" preserveAspectRatio="xMidYMax meet">
+      <defs>{{ shade_defs }}</defs>
+      {%- assign crown = 'M42 118C40 70 68 46 104 46S164 72 162 118Z' -%}
+      {%- assign brim = 'M48 110C80 122 126 122 158 110 166 124 164 140 154 148 124 160 82 160 52 148 42 140 40 124 48 110Z' -%}
+      <ellipse cx="103" cy="166" rx="62" ry="7" fill="#000" fill-opacity=".35"/>
+      <path d="{{ crown }}" fill="{{ c }}"/>
+      <path d="{{ crown }}" fill="url(#{{ u }}-shade)"/>
+      <path d="M104 46C96 70 92 95 92 118M104 46C120 70 128 95 130 118" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.5"/>
+      <circle cx="104" cy="47" r="4" fill="{{ c }}" stroke="#000" stroke-opacity=".4"/>
+      <path d="{{ brim }}" fill="{{ c }}"/>
+      <path d="{{ brim }}" fill="#000" fill-opacity=".3"/>
+      <path d="M54 120C84 132 124 132 154 120" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <path d="M52 146C82 156 124 156 152 146" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="2"/>
+      <g transform="translate(104 88) scale(.17) translate(-100 -115)">{{ emblem }}</g>
+    </svg>
+
+  {%- when 'pants' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 200 200" role="img" aria-label="Joggers placeholder" preserveAspectRatio="xMidYMax meet">
+      <defs>{{ shade_defs }}</defs>
+      {%- assign legs = 'M58 36H142L150 168 114 170 100 72 86 170 50 168Z' -%}
+      <path d="{{ legs }}" fill="{{ c }}"/>
+      <path d="{{ legs }}" fill="url(#{{ u }}-shade)"/>
+      <path d="M58 18H142V36H58Z" fill="{{ c }}"/>
+      <path d="M58 18H142V36H58Z" fill="#000" fill-opacity=".35"/>
+      <path d="M50 168 86 170V184L52 182ZM114 170 150 168 148 182 114 184Z" fill="{{ c }}"/>
+      <path d="M50 168 86 170V184L52 182ZM114 170 150 168 148 182 114 184Z" fill="#000" fill-opacity=".35"/>
+      <path d="M96 36 94 58M104 36l2 22" stroke="#ddd" stroke-width="2" stroke-linecap="round"/>
+      <path d="M100 36V72" stroke="#000" stroke-opacity=".35" stroke-width="1.5"/>
+      <path d="M61 40 53 166M139 40l8 126" stroke="#fff" stroke-opacity=".75" stroke-width="2.5"/>
+      <g transform="translate(124 72) scale(.11) translate(-100 -115)">{{ emblem }}</g>
+    </svg>
+
+  {%- when 'design' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 200 200" role="img" aria-label="Design placeholder" preserveAspectRatio="xMidYMid meet">
+      <rect x="18" y="18" width="164" height="164" rx="10" fill="#0d1526" stroke="{{ gold }}" stroke-opacity=".6" stroke-width="2" stroke-dasharray="8 6"/>
+      <g transform="translate(100 92) scale(.48) translate(-100 -115)">{{ emblem }}</g>
+      <text x="100" y="168" text-anchor="middle" font-family="Oswald, Impact, Arial Narrow, sans-serif" font-weight="700" font-size="{% if label.size > 12 %}10{% else %}13{% endif %}" letter-spacing="2" fill="{{ gold }}">{{ label | default: 'Your message' | upcase | escape }}</text>
+    </svg>
+
+  {%- when 'flag' -%}
+    <svg class="pd-ph {{ class }}" viewBox="0 0 380 200" role="img" aria-label="American flag" preserveAspectRatio="xMinYMid slice">
+      <defs>
+        <pattern id="{{ u }}-stars" width="19" height="15" patternUnits="userSpaceOnUse">
+          <path d="M9.5 3l1.4 2.9 3.2.4-2.3 2.2.6 3.2-2.9-1.5-2.9 1.5.6-3.2-2.3-2.2 3.2-.4z" fill="#fff"/>
+        </pattern>
+        <linearGradient id="{{ u }}-folds" x1="0" y1="0" x2="1" y2=".25">
+          <stop offset="0" stop-color="#000" stop-opacity=".5"/>
+          <stop offset=".12" stop-color="#fff" stop-opacity=".12"/>
+          <stop offset=".25" stop-color="#000" stop-opacity=".45"/>
+          <stop offset=".4" stop-color="#fff" stop-opacity=".1"/>
+          <stop offset=".55" stop-color="#000" stop-opacity=".5"/>
+          <stop offset=".7" stop-color="#fff" stop-opacity=".08"/>
+          <stop offset=".85" stop-color="#000" stop-opacity=".45"/>
+          <stop offset="1" stop-color="#fff" stop-opacity=".05"/>
+        </linearGradient>
+      </defs>
+      {%- for i in (0..12) -%}
+        {%- assign m = i | modulo: 2 -%}
+        <rect x="0" y="{{ i | times: 15.385 }}" width="380" height="15.5" fill="{% if m == 0 %}#a3243a{% else %}#e8e8e8{% endif %}"/>
+      {%- endfor -%}
+      <rect width="152" height="107.7" fill="#1f3566"/>
+      <rect width="152" height="107.7" fill="url(#{{ u }}-stars)"/>
+      <rect width="380" height="200" fill="url(#{{ u }}-folds)"/>
+    </svg>
+{%- endcase -%}

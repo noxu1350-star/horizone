@@ -1,0 +1,37 @@
+{%- comment -%}
+  Phonetic Designs icon set.
+  Usage: {% render 'pd-icon', icon: 'arrow' %}
+  Icons: arrow, chevron, shield, megaphone, handshake, star, heart, flag, emblem
+{%- endcomment -%}
+{%- case icon -%}
+  {%- when 'arrow' -%}
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- when 'chevron' -%}
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- when 'shield' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M24 5l15 6v11c0 10-6.5 17.5-15 21-8.5-3.5-15-11-15-21V11l15-6z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M24 15l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8L24 15z" fill="currentColor"/></svg>
+  {%- when 'megaphone' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M8 20v8a2 2 0 002 2h5l14 8V10l-14 8h-5a2 2 0 00-2 2z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M15 30l3 9h5l-2.5-9M35 18a8 8 0 010 12M39 14a14 14 0 010 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- when 'handshake' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M4 18l8-6 7 3M44 18l-8-6-9 3-8 7a3 3 0 004 4l5-3 10 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 18v12l5 3M44 18v12l-6 3M13 33l4 4M18 30l5 5M23 28l5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- when 'star' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M24 6l5.3 11 12 1.6-8.8 8.3 2.2 12L24 33.2 13.3 39l2.2-12-8.8-8.3 12-1.6L24 6z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+  {%- when 'heart' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M24 41S7 31 7 18.5A9.5 9.5 0 0124 13a9.5 9.5 0 0117 5.5C41 31 24 41 24 41z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>
+  {%- when 'flag' -%}
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d="M10 42V6M10 8h28l-5 8 5 8H10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- when 'emblem' -%}
+    {%- comment -%} Decorative shield emblem used when no image is uploaded. {%- endcomment -%}
+    <svg viewBox="0 0 200 230" fill="none" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="pdEmblemFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="currentColor" stop-opacity="0.18"/>
+          <stop offset="1" stop-color="currentColor" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <path d="M100 8l84 26v62c0 58-37 101-84 126C53 197 16 154 16 96V34L100 8z" fill="url(#pdEmblemFill)" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M100 30l64 20v46c0 46-28 80-64 101-36-21-64-55-64-101V50l64-20z" stroke="currentColor" stroke-opacity="0.45" stroke-width="2"/>
+      <path d="M100 68l9.4 19 21 3-15.2 14.8 3.6 20.9L100 116l-18.8 9.7 3.6-20.9L69.6 90l21-3L100 68z" fill="currentColor"/>
+      <path d="M58 150h84M68 166h64" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+{%- endcase -%}

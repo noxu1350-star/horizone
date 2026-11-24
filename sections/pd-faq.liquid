@@ -1,0 +1,281 @@
+<section
+  class="pd pd-faq"
+  {% if section.settings.anchor != blank %}id="{{ section.settings.anchor | handleize }}"{% endif %}
+  aria-labelledby="PdFaqHeading-{{ section.id }}"
+>
+  <div class="pd__inner pd-faq__inner">
+    <div class="pd-faq__intro">
+      {%- if section.settings.eyebrow != blank -%}
+        <p class="pd-eyebrow">{{ section.settings.eyebrow }}</p>
+      {%- endif -%}
+      <h2 id="PdFaqHeading-{{ section.id }}" class="pd-display pd-faq__title">{{ section.settings.heading }}</h2>
+      <span class="pd-rule" aria-hidden="true"></span>
+      {%- if section.settings.text != blank -%}
+        <div class="pd-faq__text">{{ section.settings.text }}</div>
+      {%- endif -%}
+
+      {%- if section.settings.email != blank or section.settings.phone != blank -%}
+        <ul class="pd-faq__contact" role="list">
+          {%- if section.settings.email != blank -%}
+            <li>
+              <span class="pd-faq__contact-label">Email</span>
+              <a href="mailto:{{ section.settings.email }}">{{ section.settings.email }}</a>
+            </li>
+          {%- endif -%}
+          {%- if section.settings.phone != blank -%}
+            <li>
+              <span class="pd-faq__contact-label">Call</span>
+              <a href="tel:{{ section.settings.phone | remove: ' ' | remove: '-' | remove: '(' | remove: ')' }}">{{ section.settings.phone }}</a>
+            </li>
+          {%- endif -%}
+        </ul>
+      {%- endif -%}
+    </div>
+
+    <div class="pd-faq__list">
+      {%- for block in section.blocks -%}
+        <details class="pd-faq__item" {{ block.shopify_attributes }} {% if forloop.first and section.settings.open_first %}open{% endif %}>
+          <summary class="pd-faq__q">
+            <span>{{ block.settings.question }}</span>
+            <span class="pd-faq__toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="pd-faq__a">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% stylesheet %}
+  .pd-faq {
+    border-top: 1px solid var(--pd-line);
+    scroll-margin-top: calc(var(--header-height, 60px) + 16px);
+  }
+
+  .pd-faq__inner {
+    display: grid;
+    gap: 32px;
+    padding-block: clamp(48px, 7vw, 88px);
+  }
+
+  .pd-faq__title {
+    font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+    margin-top: 4px;
+  }
+
+  .pd-faq__text {
+    color: var(--pd-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    max-width: 360px;
+  }
+
+  .pd-faq__text p {
+    margin: 0;
+  }
+
+  .pd-faq__contact {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+
+  .pd-faq__contact li {
+    display: grid;
+    gap: 2px;
+  }
+
+  .pd-faq__contact-label {
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    color: var(--pd-gold);
+  }
+
+  .pd-faq__contact a {
+    color: var(--pd-text);
+    text-decoration: none;
+    font-size: 1rem;
+    word-break: break-word;
+  }
+
+  .pd-faq__contact a:hover {
+    color: var(--pd-gold);
+  }
+
+  .pd-faq__list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pd-faq__item {
+    background: var(--pd-navy-2);
+    border: 1px solid var(--pd-line);
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+  }
+
+  .pd-faq__item[open] {
+    border-left-color: var(--pd-gold);
+  }
+
+  .pd-faq__q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 1rem;
+  }
+
+  .pd-faq__q::-webkit-details-marker {
+    display: none;
+  }
+
+  .pd-faq__q:hover {
+    color: var(--pd-gold);
+  }
+
+  .pd-faq__q:focus-visible {
+    outline: 2px solid var(--pd-gold);
+    outline-offset: -2px;
+  }
+
+  .pd-faq__toggle {
+    position: relative;
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .pd-faq__toggle::before,
+  .pd-faq__toggle::after {
+    content: '';
+    position: absolute;
+    inset: 6px 0 auto;
+    height: 2px;
+    background: var(--pd-gold);
+    transition: transform 0.2s ease;
+  }
+
+  .pd-faq__toggle::after {
+    transform: rotate(90deg);
+  }
+
+  .pd-faq__item[open] .pd-faq__toggle::after {
+    transform: rotate(0deg);
+  }
+
+  .pd-faq__a {
+    padding: 0 20px 20px;
+    color: var(--pd-muted);
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  .pd-faq__a p {
+    margin: 0 0 0.6em;
+  }
+
+  .pd-faq__a a {
+    color: var(--pd-gold);
+  }
+
+  @media (min-width: 990px) {
+    .pd-faq__inner {
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 64px;
+      align-items: start;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "PD · FAQ",
+  "tag": "div",
+  "class": "pd-section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "anchor",
+      "label": "Anchor ID",
+      "info": "Lets menu links like /#FAQ jump here.",
+      "default": "FAQ"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow",
+      "default": "Questions"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Frequently asked"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Can't find your answer? Our veteran-owned team is here to help.</p>"
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "Support email"
+    },
+    {
+      "type": "text",
+      "id": "phone",
+      "label": "Support phone"
+    },
+    {
+      "type": "checkbox",
+      "id": "open_first",
+      "label": "Open first question",
+      "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "question",
+      "name": "Question",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Question",
+          "default": "How does Create Your Gear work?"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "Answer",
+          "default": "<p>Choose your garment, military connection, design and color, then review and order.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "PD · FAQ",
+      "blocks": [
+        { "type": "question" }
+      ]
+    }
+  ]
+}
+{% endschema %}

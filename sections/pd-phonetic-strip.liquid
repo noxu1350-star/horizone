@@ -1,0 +1,163 @@
+{%- liquid
+  assign words = section.settings.words | split: ','
+  assign speed = section.settings.speed
+-%}
+
+<section class="pd pd-strip" style="--pd-strip-speed: {{ speed }}s;" aria-label="{{ section.settings.label | escape }}">
+  <div class="pd-strip__track">
+    {%- for pass in (1..2) -%}
+      <ul class="pd-strip__list" role="list" {% if pass == 2 %}aria-hidden="true"{% endif %}>
+        {%- for word in words -%}
+          {%- assign w = word | strip -%}
+          {%- if w != blank -%}
+            <li class="pd-strip__item">
+              <span class="pd-strip__num">{{ forloop.index | modulo: 10 }}</span>
+              <span class="pd-strip__word">{{ w }}</span>
+            </li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .pd-strip {
+    overflow: hidden;
+    border-bottom: 1px solid var(--pd-line);
+    background: #070e1a;
+    position: relative;
+  }
+
+  .pd-strip::before,
+  .pd-strip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .pd-strip::before {
+    left: 0;
+    background: linear-gradient(90deg, #070e1a, transparent);
+  }
+
+  .pd-strip::after {
+    right: 0;
+    background: linear-gradient(270deg, #070e1a, transparent);
+  }
+
+  .pd-strip__track {
+    display: flex;
+    width: max-content;
+    animation: pd-strip-scroll var(--pd-strip-speed, 40s) linear infinite;
+  }
+
+  .pd-strip:hover .pd-strip__track {
+    animation-play-state: paused;
+  }
+
+  .pd-strip__list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pd-strip__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    white-space: nowrap;
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .pd-strip__item::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-left: 46px;
+    transform: rotate(45deg);
+    background: var(--pd-gold);
+    opacity: 0.6;
+  }
+
+  .pd-strip__num {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid rgb(from var(--pd-gold) r g b / 0.6);
+    border-radius: 50%;
+    font-size: 0.8rem;
+    letter-spacing: 0;
+    color: var(--pd-gold);
+  }
+
+  .pd-strip__word {
+    font-size: 1.05rem;
+    color: var(--pd-text);
+  }
+
+  @keyframes pd-strip-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pd-strip__track {
+      animation: none;
+      width: auto;
+      flex-wrap: wrap;
+    }
+
+    .pd-strip__list[aria-hidden='true'] {
+      display: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "PD · Phonetic ticker",
+  "tag": "div",
+  "class": "pd-section",
+  "settings": [
+    {
+      "type": "textarea",
+      "id": "words",
+      "label": "Words (comma separated)",
+      "info": "Numbers 1–9 then 0 are added automatically in order.",
+      "default": "Wun, Too, Tree, Fower, Fife, Siks, Seven, Ait, Niner, Zeero"
+    },
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Accessible label",
+      "default": "Military phonetic numbers"
+    },
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Scroll duration",
+      "min": 15,
+      "max": 90,
+      "step": 5,
+      "unit": "s",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "PD · Phonetic ticker"
+    }
+  ]
+}
+{% endschema %}

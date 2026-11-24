@@ -1,0 +1,151 @@
+{%- comment -%}
+  Phonetic Designs shared brand tokens + utilities.
+  Rendered once in layout/theme.liquid. Used by sections/pd-*.liquid.
+{%- endcomment -%}
+{%- liquid
+  assign pd_font = settings.pd_display_font
+  assign pd_font_bold = pd_font | font_modify: 'weight', '700'
+  if pd_font_bold == blank
+    assign pd_font_bold = pd_font
+  endif
+-%}
+<style>
+  {{ pd_font | font_face: font_display: 'swap' }}
+  {{ pd_font_bold | font_face: font_display: 'swap' }}
+
+  :root {
+    --pd-navy: {{ settings.pd_navy | default: '#0b1424' }};
+    --pd-navy-2: {{ settings.pd_navy_light | default: '#13213a' }};
+    --pd-gold: {{ settings.pd_gold | default: '#e2b74a' }};
+    --pd-text: {{ settings.pd_text | default: '#ffffff' }};
+    --pd-muted: rgb(from var(--pd-text) r g b / 0.72);
+    --pd-line: rgb(from var(--pd-text) r g b / 0.14);
+    --pd-font-display: {{ pd_font_bold.family }}, {{ pd_font_bold.fallback_families }};
+    --pd-font-weight: {{ pd_font_bold.weight }};
+  }
+
+  .pd {
+    background: var(--pd-navy);
+    color: var(--pd-text);
+  }
+
+  .pd *,
+  .pd *::before,
+  .pd *::after {
+    box-sizing: border-box;
+  }
+
+  .pd__inner {
+    width: 100%;
+    max-width: var(--pd-max, 1360px);
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 48px);
+  }
+
+  .pd-display {
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    line-height: 0.95;
+    margin: 0;
+    color: var(--pd-text);
+  }
+
+  .pd-gold {
+    color: var(--pd-gold);
+  }
+
+  .pd-eyebrow {
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.8rem;
+    color: var(--pd-gold);
+    margin: 0;
+  }
+
+  .pd-rule {
+    display: block;
+    width: 44px;
+    height: 3px;
+    background: var(--pd-gold);
+    border: 0;
+    margin: 12px 0 16px;
+  }
+
+  .pd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 12px 22px;
+    font-family: var(--pd-font-display);
+    font-weight: var(--pd-font-weight);
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1.5px solid var(--pd-gold);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .pd-btn--primary {
+    background: var(--pd-gold);
+    color: var(--pd-navy);
+  }
+
+  .pd-btn--primary:hover {
+    box-shadow: 0 0 0 4px rgb(from var(--pd-gold) r g b / 0.25);
+    transform: translateY(-1px);
+  }
+
+  .pd-btn--ghost {
+    background: transparent;
+    color: var(--pd-text);
+    border-color: var(--pd-line);
+  }
+
+  .pd-btn--ghost:hover {
+    border-color: var(--pd-gold);
+    color: var(--pd-gold);
+  }
+
+  .pd-btn--outline {
+    background: transparent;
+    color: var(--pd-gold);
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .pd-btn--outline:hover {
+    background: var(--pd-gold);
+    color: var(--pd-navy);
+  }
+
+  .pd-btn svg {
+    width: 14px;
+    height: 14px;
+    flex: none;
+  }
+
+  .pd-btn:focus-visible,
+  .pd a:focus-visible {
+    outline: 2px solid var(--pd-gold);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pd *,
+    .pd *::before,
+    .pd *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
