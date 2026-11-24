@@ -1,6 +1,6 @@
 <section
   class="pd pd-faq"
-  {% if section.settings.anchor != blank %}id="{{ section.settings.anchor | handleize }}"{% endif %}
+  {% if section.settings.anchor != blank %}id="{{ section.settings.anchor | strip | replace: ' ', '-' | escape }}"{% endif %}
   aria-labelledby="PdFaqHeading-{{ section.id }}"
 >
   <div class="pd__inner pd-faq__inner">
