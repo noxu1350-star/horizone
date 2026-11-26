@@ -1,0 +1,1584 @@
+{%- comment -%}
+  Phonetic Designs: "Create Your Gear" product customizer.
+  Used by templates/product.customize.json. Assign that template to any product that can be personalised.
+
+  The garment is the product itself; its Color and Size options drive the variant.
+  Designs come from this section's "Design" blocks and, optionally, from a metaobject type
+  (fields: title, image, connection, branch, category).
+  Every choice is saved on the cart line as a line item property; uploads and a preview image are attached as files.
+{%- endcomment -%}
+{%- liquid
+  assign cz_id = 'pdcz-' | append: section.id
+  assign current = product.selected_or_first_available_variant
+
+  assign color_index = nil
+  assign size_index = nil
+  for option in product.options_with_values
+    assign oname = option.name | downcase
+    if oname contains 'color' or oname contains 'colour'
+      assign color_index = forloop.index0
+    elsif oname contains 'size'
+      assign size_index = forloop.index0
+    endif
+  endfor
+
+  assign garment_hint = product.metafields.custom.garment_type.value | default: section.settings.garment_type
+  if garment_hint == 'auto'
+    assign garment_hint = product.type | append: ' ' | append: product.title
+  endif
+
+  assign fee_variant = section.settings.fee_product.selected_or_first_available_variant
+-%}
+
+{%- capture fonts_css -%}
+  {%- for i in (1..3) -%}
+    {%- assign fkey = 'text_font_' | append: i -%}
+    {%- assign f = section.settings[fkey] -%}
+    {%- if f -%}{{ f | font_face: font_display: 'swap' }}{%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+<style>{{ fonts_css }}</style>
+
+<section class="pd pd-cz" id="{{ cz_id }}" data-pd-cz>
+  <div class="pd__inner pd-cz__grid">
+    {%- comment -%} ===== Preview stage ===== {%- endcomment -%}
+    <div class="pd-cz__stage-col">
+      <div class="pd-cz__stage">
+        <div class="pd-cz__stage-top">
+          <div class="pd-cz__seg" role="group" aria-label="Preview side">
+            <button type="button" class="is-active" data-view="front" aria-pressed="true">Front</button>
+            <button type="button" data-view="back" aria-pressed="false">Back</button>
+          </div>
+          <div class="pd-cz__seg" role="group" aria-label="Avatar">
+            <button type="button" class="is-active" data-avatar="male" aria-pressed="true">Male</button>
+            <button type="button" data-avatar="female" aria-pressed="false">Female</button>
+          </div>
+        </div>
+
+        <div class="pd-cz__canvas">
+          <svg class="pd-cz__svg" viewBox="0 0 400 600" role="img" aria-label="Preview of your gear" data-stage></svg>
+          <p class="pd-cz__placing" data-placing></p>
+        </div>
+
+        <div class="pd-cz__stage-bottom">
+          <div class="pd-cz__skins" role="group" aria-label="Skin tone">
+            {%- assign skins = '#f3d3bd,#e2b08c,#c68863,#9a6440,#6b4228,#45291a' | split: ',' -%}
+            {%- for s in skins -%}
+              <button type="button" class="pd-cz__skin{% if forloop.index == 2 %} is-active{% endif %}" style="--c: {{ s }}" data-skin="{{ s }}" aria-label="Skin tone {{ forloop.index }}" aria-pressed="{% if forloop.index == 2 %}true{% else %}false{% endif %}"></button>
+            {%- endfor -%}
+          </div>
+          <label class="pd-cz__toggle"><input type="checkbox" data-show-area checked> Show print area</label>
+        </div>
+        <p class="pd-cz__notice">{{ section.settings.avatar_notice }}</p>
+      </div>
+    </div>
+
+    {%- comment -%} ===== Builder panel ===== {%- endcomment -%}
+    <form
+      class="pd-cz__panel"
+      method="post"
+      action="{{ routes.cart_add_url }}"
+      enctype="multipart/form-data"
+      accept-charset="UTF-8"
+      data-form
+      novalidate
+    >
+      <input type="hidden" name="form_type" value="product">
+      <input type="hidden" name="utf8" value="✓">
+      <input type="hidden" name="id" value="{{ current.id }}" data-variant-input>
+      {%- assign props = 'Connection,Branch,Design,Customization,Custom text,Font,Text color,Print location,Avatar,Customer approval,_Design ID' | split: ',' -%}
+      {%- for p in props -%}
+        <input type="hidden" name="properties[{{ p }}]" value="" data-prop="{{ p }}" disabled>
+      {%- endfor -%}
+      <input type="file" name="properties[Preview]" accept="image/png" hidden data-preview-file disabled>
+
+      <header class="pd-cz__head">
+        <p class="pd-eyebrow">{{ section.settings.eyebrow }}</p>
+        <h1 class="pd-display pd-cz__title">{{ product.title }}</h1>
+        <div class="pd-cz__price-row">
+          <p class="pd-cz__price" data-price>{{ current.price | money }}</p>
+          <p class="pd-cz__fee" data-fee-note hidden></p>
+        </div>
+        <div class="pd-cz__progress" aria-hidden="true"><span data-progress-bar></span></div>
+        <p class="pd-cz__progress-text" data-progress-text></p>
+      </header>
+
+      <ol class="pd-cz__steps">
+        {%- comment -%} 1. Garment {%- endcomment -%}
+        <li class="pd-cz__step" data-step="garment">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">01</span>
+            <span class="pd-cz__step-title">Garment</span>
+            <span class="pd-cz__step-value" data-value>{{ product.title }}</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            {%- assign gcol = section.settings.garments_collection -%}
+            {%- if gcol != blank and gcol.products_count > 0 -%}
+              <p class="pd-cz__hint">Switch garment anytime. Your choices come with you.</p>
+              <ul class="pd-cz__garments">
+                {%- for g in gcol.products limit: 12 -%}
+                  <li>
+                    <a href="{{ g.url }}" class="pd-cz__garment{% if g.id == product.id %} is-active{% endif %}"{% if g.id == product.id %} aria-current="true"{% endif %}>
+                      <span class="pd-cz__garment-img">
+                        {%- if g.featured_image -%}
+                          {{ g.featured_image | image_url: width: 240 | image_tag: loading: 'lazy', alt: g.title, widths: '120,240', sizes: '120px' }}
+                        {%- else -%}
+                          {%- assign gt = g.type | append: ' ' | append: g.title | downcase -%}
+                          {%- liquid
+                            assign ptype = 'tshirt'
+                            if gt contains 'hood' or gt contains 'sweat'
+                              assign ptype = 'hoodie'
+                            elsif gt contains 'hat' or gt contains 'cap'
+                              assign ptype = 'hat'
+                            elsif gt contains 'pant' or gt contains 'jogger' or gt contains 'short'
+                              assign ptype = 'pants'
+                            endif
+                          -%}
+                          {% render 'pd-placeholder', type: ptype, color: '#1b2a47', uid: g.id %}
+                        {%- endif -%}
+                      </span>
+                      <span class="pd-cz__garment-name">{{ g.title }}</span>
+                      <span class="pd-cz__garment-price">{{ g.price | money }}</span>
+                    </a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            {%- else -%}
+              <p class="pd-cz__hint">You're customizing <strong>{{ product.title }}</strong>.</p>
+              {%- if request.design_mode -%}
+                <p class="pd-cz__hint pd-cz__hint--admin">Pick a "Garments" collection in this section's settings to let shoppers switch garments here.</p>
+              {%- endif -%}
+            {%- endif -%}
+          </div>
+        </li>
+
+        {%- comment -%} 2. Connection {%- endcomment -%}
+        <li class="pd-cz__step" data-step="connection">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">02</span>
+            <span class="pd-cz__step-title">Connection</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            <p class="pd-cz__hint">Who are you wearing it for?</p>
+            <div class="pd-cz__chips" data-group="connection">
+              {%- assign list = section.settings.connections | newline_to_br | split: '<br />' -%}
+              {%- for item in list -%}
+                {%- assign v = item | strip -%}
+                {%- if v != blank -%}<button type="button" class="pd-cz__chip" data-value="{{ v | escape }}">{{ v | escape }}</button>{%- endif -%}
+              {%- endfor -%}
+            </div>
+          </div>
+        </li>
+
+        {%- comment -%} 3. Branch {%- endcomment -%}
+        <li class="pd-cz__step" data-step="branch">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">03</span>
+            <span class="pd-cz__step-title">Branch</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            <div class="pd-cz__chips" data-group="branch">
+              {%- assign list = section.settings.branches | newline_to_br | split: '<br />' -%}
+              {%- for item in list -%}
+                {%- assign v = item | strip -%}
+                {%- if v != blank -%}<button type="button" class="pd-cz__chip" data-value="{{ v | escape }}">{{ v | escape }}</button>{%- endif -%}
+              {%- endfor -%}
+            </div>
+          </div>
+        </li>
+
+        {%- comment -%} 4. Design {%- endcomment -%}
+        <li class="pd-cz__step" data-step="design">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">04</span>
+            <span class="pd-cz__step-title">Design</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            <div class="pd-cz__tabs" role="tablist" aria-label="Customization type">
+              <button type="button" role="tab" class="is-active" aria-selected="true" data-type="artwork">Our designs</button>
+              {%- if section.settings.allow_text -%}<button type="button" role="tab" aria-selected="false" data-type="text">Custom text</button>{%- endif -%}
+              {%- if section.settings.allow_upload -%}<button type="button" role="tab" aria-selected="false" data-type="upload">Upload artwork</button>{%- endif -%}
+            </div>
+
+            <div class="pd-cz__pane" data-pane="artwork">
+              <label class="pd-cz__search">
+                <span class="visually-hidden">Search designs</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <input type="search" placeholder="Search designs" data-search autocomplete="off">
+              </label>
+              <div class="pd-cz__chips pd-cz__chips--small" data-group="category">
+                <button type="button" class="pd-cz__chip is-active" data-value="">All</button>
+                {%- assign list = section.settings.categories | newline_to_br | split: '<br />' -%}
+                {%- for item in list -%}
+                  {%- assign v = item | strip -%}
+                  {%- if v != blank -%}<button type="button" class="pd-cz__chip" data-value="{{ v | escape }}">{{ v | escape }}</button>{%- endif -%}
+                {%- endfor -%}
+              </div>
+              <p class="pd-cz__filter-note" data-filter-note></p>
+              <ul class="pd-cz__designs" data-designs></ul>
+              <p class="pd-cz__empty" data-empty hidden>No designs match. <button type="button" class="pd-cz__link" data-clear-filters>Show all designs</button></p>
+              <button type="button" class="pd-btn pd-btn--ghost pd-cz__more" data-more hidden>Load more</button>
+            </div>
+
+            {%- if section.settings.allow_text -%}
+              <div class="pd-cz__pane" data-pane="text" hidden>
+                <label class="pd-cz__label" for="{{ cz_id }}-text">Your text <span data-count></span></label>
+                <input class="pd-cz__input" id="{{ cz_id }}-text" type="text" maxlength="{{ section.settings.text_max }}" data-text placeholder="e.g. PROUD ARMY MOM">
+                <p class="pd-cz__label">Font</p>
+                <div class="pd-cz__chips" data-group="font">
+                  {%- for i in (1..3) -%}
+                    {%- assign fkey = 'text_font_' | append: i -%}
+                    {%- assign f = section.settings[fkey] -%}
+                    {%- if f -%}
+                      <button type="button" class="pd-cz__chip pd-cz__chip--font" data-value="{{ f.family | escape }}" data-family="{{ f.family | escape }}, {{ f.fallback_families | escape }}" style="font-family: {{ f.family }}, {{ f.fallback_families }}; font-weight: {{ f.weight }}">{{ f.family }}</button>
+                    {%- endif -%}
+                  {%- endfor -%}
+                </div>
+                <p class="pd-cz__label">Text color</p>
+                <div class="pd-cz__swatches" data-group="text-color">
+                  {%- assign list = section.settings.text_colors | newline_to_br | split: '<br />' -%}
+                  {%- for item in list -%}
+                    {%- assign parts = item | strip | split: ':' -%}
+                    {%- if parts.size == 2 -%}
+                      {%- assign cname = parts[0] | strip -%}
+                      {%- assign chex = parts[1] | strip -%}
+                      <button type="button" class="pd-cz__swatch" style="--c: {{ chex }}" data-value="{{ cname | escape }}" data-hex="{{ chex | escape }}" aria-label="{{ cname | escape }}" title="{{ cname | escape }}"></button>
+                    {%- endif -%}
+                  {%- endfor -%}
+                </div>
+                <p class="pd-cz__hint">Text is automatically sized to fit the print area.</p>
+              </div>
+            {%- endif -%}
+
+            {%- if section.settings.allow_upload -%}
+              <div class="pd-cz__pane" data-pane="upload" hidden>
+                <label class="pd-cz__drop">
+                  <input type="file" name="properties[Artwork]" accept="image/png,image/jpeg,image/webp" data-upload>
+                  {% render 'pd-icon', icon: 'arrow' %}
+                  <span data-upload-label>Choose an image (PNG, JPG or WEBP)</span>
+                </label>
+                <p class="pd-cz__warn" data-upload-warn hidden></p>
+                <label class="pd-cz__confirm"><input type="checkbox" data-owner> {{ section.settings.upload_notice }}</label>
+                <p class="pd-cz__hint">Artwork is automatically centered and scaled inside the print area, and may be reviewed before production.</p>
+              </div>
+            {%- endif -%}
+          </div>
+        </li>
+
+        {%- comment -%} 5. Color {%- endcomment -%}
+        <li class="pd-cz__step" data-step="color">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">05</span>
+            <span class="pd-cz__step-title">Color</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            {%- if color_index != nil -%}
+              {%- assign copt = product.options_with_values[color_index] -%}
+              <div class="pd-cz__swatches pd-cz__swatches--lg" data-group="color">
+                {%- for value in copt.values -%}
+                  {%- liquid
+                    assign hex = ''
+                    if value.swatch.color
+                      assign hex = value.swatch.color | color_to_hex
+                    endif
+                  -%}
+                  <button type="button" class="pd-cz__swatch" data-value="{{ value | escape }}" data-hex="{{ hex }}" aria-label="{{ value | escape }}" title="{{ value | escape }}"{% if value.swatch.image %} style="background-image: url({{ value.swatch.image | image_url: width: 96 }})"{% endif %}></button>
+                {%- endfor -%}
+              </div>
+              <p class="pd-cz__hint" data-color-name></p>
+            {%- else -%}
+              <p class="pd-cz__hint">This garment comes in one color.</p>
+            {%- endif -%}
+          </div>
+        </li>
+
+        {%- comment -%} 6. Placement {%- endcomment -%}
+        <li class="pd-cz__step" data-step="placement">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">06</span>
+            <span class="pd-cz__step-title">Print location</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            <div class="pd-cz__chips" data-group="placement"></div>
+            <p class="pd-cz__hint">Designs are automatically sized and positioned inside approved print-safe areas.</p>
+          </div>
+        </li>
+
+        {%- comment -%} 7. Size {%- endcomment -%}
+        <li class="pd-cz__step" data-step="size">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">07</span>
+            <span class="pd-cz__step-title">Size</span>
+            <span class="pd-cz__step-value" data-value>Choose</span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            {%- for option in product.options_with_values -%}
+              {%- if product.has_only_default_variant -%}{%- break -%}{%- endif -%}
+              {%- unless forloop.index0 == color_index -%}
+                {%- if forloop.index0 == size_index -%}
+                  <div class="pd-cz__label-row">
+                    <p class="pd-cz__label">{{ option.name }}</p>
+                    <button type="button" class="pd-cz__link" data-open-guide>Size guide</button>
+                  </div>
+                {%- else -%}
+                  <p class="pd-cz__label">{{ option.name }}</p>
+                {%- endif -%}
+                <div class="pd-cz__chips pd-cz__chips--size" data-option-index="{{ forloop.index0 }}">
+                  {%- for value in option.values -%}
+                    <button type="button" class="pd-cz__chip" data-value="{{ value | escape }}">{{ value | escape }}<small data-extra></small></button>
+                  {%- endfor -%}
+                </div>
+              {%- endunless -%}
+            {%- endfor -%}
+            <p class="pd-cz__label">Quantity</p>
+            <div class="pd-cz__qty">
+              <button type="button" data-qty="-1" aria-label="Decrease quantity">&minus;</button>
+              <input type="number" name="quantity" value="1" min="1" max="99" inputmode="numeric" data-qty-input aria-label="Quantity">
+              <button type="button" data-qty="1" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+        </li>
+
+        {%- comment -%} 8. Review {%- endcomment -%}
+        <li class="pd-cz__step" data-step="review">
+          <button type="button" class="pd-cz__step-head" data-step-toggle aria-expanded="false">
+            <span class="pd-cz__num">08</span>
+            <span class="pd-cz__step-title">Review</span>
+            <span class="pd-cz__step-value" data-value></span>
+            <span class="pd-cz__check" aria-hidden="true">{% render 'pd-icon', icon: 'chevron' %}</span>
+          </button>
+          <div class="pd-cz__step-body" hidden>
+            <dl class="pd-cz__summary" data-summary></dl>
+            <label class="pd-cz__confirm"><input type="checkbox" data-approve> {{ section.settings.approval_text }}</label>
+          </div>
+        </li>
+      </ol>
+
+      <div class="pd-cz__nav">
+        <button type="button" class="pd-btn pd-btn--ghost" data-prev>Back</button>
+        <button type="button" class="pd-btn pd-btn--ghost" data-next>Next {% render 'pd-icon', icon: 'arrow' %}</button>
+      </div>
+      <p class="pd-cz__error" role="alert" data-error></p>
+      <button type="submit" class="pd-btn pd-btn--primary pd-cz__submit" data-submit>
+        <span data-submit-label>Add to cart</span> {% render 'pd-icon', icon: 'arrow' %}
+      </button>
+      <p class="pd-cz__tagline pd-display">Wear the <span class="pd-gold">Mission.</span></p>
+    </form>
+  </div>
+
+  {%- comment -%} Mobile sticky bar {%- endcomment -%}
+  <div class="pd-cz__bar" data-bar>
+    <div>
+      <p class="pd-cz__bar-price" data-bar-price>{{ current.price | money }}</p>
+      <p class="pd-cz__bar-step" data-bar-step></p>
+    </div>
+    <button type="button" class="pd-btn pd-btn--primary" data-bar-action>Next</button>
+  </div>
+
+  <dialog class="pd-cz__dialog" data-guide aria-labelledby="{{ cz_id }}-guide-title">
+    <div class="pd-cz__dialog-inner">
+      <div class="pd-cz__dialog-head">
+        <h2 class="pd-display" id="{{ cz_id }}-guide-title">Size guide</h2>
+        <button type="button" class="pd-cz__close" data-close-guide aria-label="Close">&times;</button>
+      </div>
+      <div class="pd-cz__rte">
+        {%- if section.settings.size_guide_page != blank -%}
+          {{ section.settings.size_guide_page.content }}
+        {%- else -%}
+          {{ section.settings.size_guide_text }}
+        {%- endif -%}
+      </div>
+    </div>
+  </dialog>
+
+  {%- capture designs_json -%}
+    [
+    {%- assign first = true -%}
+    {%- for block in section.blocks -%}
+      {%- if block.type == 'design' -%}
+        {%- unless first -%},{%- endunless -%}{%- assign first = false -%}
+        {
+          "id": {{ block.id | json }},
+          "title": {{ block.settings.title | json }},
+          "image": {% if block.settings.image %}{{ block.settings.image | image_url: width: 800 | json }}{% else %}null{% endif %},
+          "thumb": {% if block.settings.image %}{{ block.settings.image | image_url: width: 300 | json }}{% else %}null{% endif %},
+          "connection": {{ block.settings.connection | json }},
+          "branch": {{ block.settings.branch | json }},
+          "category": {{ block.settings.category | json }}
+        }
+      {%- endif -%}
+    {%- endfor -%}
+    {%- assign mtype = section.settings.metaobject_type | strip -%}
+    {%- if mtype != blank -%}
+      {%- for entry in shop.metaobjects[mtype].values limit: 250 -%}
+        {%- unless first -%},{%- endunless -%}{%- assign first = false -%}
+        {
+          "id": {{ entry.system.handle | prepend: 'mo-' | json }},
+          "title": {{ entry.title.value | default: entry.system.handle | json }},
+          "image": {% if entry.image.value %}{{ entry.image.value | image_url: width: 800 | json }}{% else %}null{% endif %},
+          "thumb": {% if entry.image.value %}{{ entry.image.value | image_url: width: 300 | json }}{% else %}null{% endif %},
+          "connection": {{ entry.connection.value | default: '' | json }},
+          "branch": {{ entry.branch.value | default: '' | json }},
+          "category": {{ entry.category.value | default: '' | json }}
+        }
+      {%- endfor -%}
+    {%- endif -%}
+    ]
+  {%- endcapture -%}
+
+  <script type="application/json" data-cz-config>
+    {
+      "product": {{ product.title | json }},
+      "garmentHint": {{ garment_hint | json }},
+      "placementsOverride": {{ product.metafields.custom.print_locations.value | default: '' | json }},
+      "colorIndex": {% if color_index != nil %}{{ color_index }}{% else %}null{% endif %},
+      "sizeIndex": {% if size_index != nil %}{{ size_index }}{% else %}null{% endif %},
+      "optionCount": {{ product.options.size }},
+      "initialVariant": {{ current.id }},
+      "variants": [
+        {%- for v in product.variants -%}
+          {"id": {{ v.id }}, "options": {{ v.options | json }}, "available": {{ v.available | json }}, "price": {{ v.price }}}{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ],
+      "moneyFormat": {{ shop.money_format | json }},
+      "placements": {
+        "center_chest": {{ section.settings.pl_center_chest | json }},
+        "left_chest": {{ section.settings.pl_left_chest | json }},
+        "full_front": {{ section.settings.pl_full_front | json }},
+        "upper_back": {{ section.settings.pl_upper_back | json }},
+        "full_back": {{ section.settings.pl_full_back | json }},
+        "hat_front": {{ section.settings.pl_hat_front | json }},
+        "left_leg": {{ section.settings.pl_left_leg | json }},
+        "right_leg": {{ section.settings.pl_right_leg | json }},
+        "shorts_leg": {{ section.settings.pl_shorts_leg | json }}
+      },
+      "pageSize": {{ section.settings.page_size }},
+      "minUploadPx": {{ section.settings.min_upload_px }},
+      "fee": {% if fee_variant and fee_variant.available %}{"id": {{ fee_variant.id }}, "price": {{ fee_variant.price }}, "text": {{ section.settings.fee_text | json }}, "upload": {{ section.settings.fee_upload | json }}, "artwork": {{ section.settings.fee_artwork | json }}}{% else %}null{% endif %},
+      "designs": {{ designs_json }}
+    }
+  </script>
+</section>
+
+<script src="{{ 'pd-customizer.js' | asset_url }}" defer="defer"></script>
+
+{% stylesheet %}
+  .pd-cz {
+    background:
+      radial-gradient(1200px 600px at 15% 0%, rgb(from var(--pd-gold) r g b / 0.07), transparent 60%),
+      var(--pd-navy);
+    color: var(--pd-text);
+    padding-block: clamp(20px, 4vw, 48px) clamp(40px, 6vw, 80px);
+  }
+
+  .pd-cz [hidden] {
+    display: none !important;
+  }
+
+  .pd-cz__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: start;
+  }
+
+  /* ---------- Stage ---------- */
+  .pd-cz__stage-col {
+    position: sticky;
+    top: calc(var(--header-height, 0px) + 16px);
+  }
+
+  .pd-cz__stage {
+    position: relative;
+    border: 1px solid var(--pd-line);
+    border-radius: 18px;
+    background:
+      radial-gradient(60% 50% at 50% 40%, rgb(from var(--pd-navy-2) r g b / 1), var(--pd-navy) 75%);
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .pd-cz__stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(70% 60% at 50% 45%, #000, transparent);
+    pointer-events: none;
+  }
+
+  .pd-cz__stage-top,
+  .pd-cz__stage-bottom {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pd-cz__seg {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.3);
+    border: 1px solid var(--pd-line);
+  }
+
+  .pd-cz__seg button {
+    border: 0;
+    background: transparent;
+    color: rgb(255 255 255 / 0.7);
+    font: 600 0.78rem/1 var(--pd-font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .pd-cz__seg button.is-active {
+    background: var(--pd-gold);
+    color: var(--pd-navy);
+  }
+
+  .pd-cz__canvas {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+  }
+
+  .pd-cz__svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 30px 40px rgb(0 0 0 / 0.45));
+  }
+
+  .pd-cz__svg .pd-area {
+    fill: none;
+    stroke: var(--pd-gold);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+    opacity: 0.9;
+  }
+
+  .pd-cz[data-hide-area] .pd-cz__svg .pd-area {
+    display: none;
+  }
+
+  .pd-cz__svg .pd-art {
+    transition: opacity 0.25s ease;
+  }
+
+  .pd-cz__placing {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.45);
+    border: 1px solid var(--pd-line);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .pd-cz__placing:empty {
+    display: none;
+  }
+
+  .pd-cz__skins {
+    display: flex;
+    gap: 6px;
+  }
+
+  .pd-cz__skin {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--c);
+    box-shadow: inset 0 0 0 2px var(--pd-navy);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .pd-cz__skin.is-active {
+    border-color: var(--pd-gold);
+  }
+
+  .pd-cz__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: rgb(255 255 255 / 0.75);
+    cursor: pointer;
+  }
+
+  .pd-cz__toggle input {
+    accent-color: var(--pd-gold);
+  }
+
+  .pd-cz__notice {
+    position: relative;
+    margin: 12px 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  /* ---------- Panel ---------- */
+  .pd-cz__head {
+    margin-bottom: 18px;
+  }
+
+  .pd-cz__title {
+    margin: 6px 0 8px;
+    font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    line-height: 1.02;
+  }
+
+  .pd-cz__price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .pd-cz__price {
+    margin: 0;
+    font: 700 1.5rem/1.2 var(--pd-font-display);
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__fee {
+    margin: 0;
+    font-size: 0.82rem;
+    color: rgb(255 255 255 / 0.65);
+  }
+
+  .pd-cz__progress {
+    margin-top: 16px;
+    height: 4px;
+    border-radius: 4px;
+    background: rgb(255 255 255 / 0.1);
+    overflow: hidden;
+  }
+
+  .pd-cz__progress span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--pd-gold), #f5d98b);
+    transition: width 0.35s ease;
+  }
+
+  .pd-cz__progress-text {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.6);
+  }
+
+  .pd-cz__steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+
+  .pd-cz__step {
+    border: 1px solid var(--pd-line);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.025);
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .pd-cz__step.is-open {
+    border-color: rgb(from var(--pd-gold) r g b / 0.6);
+    background: rgb(255 255 255 / 0.045);
+  }
+
+  .pd-cz__step-head {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .pd-cz__num {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--pd-line);
+    font: 700 0.8rem/1 var(--pd-font-display);
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  .pd-cz__step.is-done .pd-cz__num {
+    background: var(--pd-gold);
+    border-color: var(--pd-gold);
+    color: var(--pd-navy);
+  }
+
+  .pd-cz__step.is-open .pd-cz__num {
+    border-color: var(--pd-gold);
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__step.is-open.is-done .pd-cz__num {
+    color: var(--pd-navy);
+  }
+
+  .pd-cz__step-title {
+    font: 700 1rem/1.1 var(--pd-font-display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .pd-cz__step-value {
+    justify-self: end;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: rgb(255 255 255 / 0.6);
+  }
+
+  .pd-cz__step.is-done .pd-cz__step-value {
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__check {
+    display: inline-flex;
+    width: 14px;
+    transform: rotate(90deg);
+    transition: transform 0.2s ease;
+    color: rgb(255 255 255 / 0.5);
+  }
+
+  .pd-cz__step.is-open .pd-cz__check {
+    transform: rotate(-90deg);
+  }
+
+  .pd-cz__step-body {
+    padding: 0 16px 18px;
+  }
+
+  .pd-cz__hint {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: rgb(255 255 255 / 0.65);
+  }
+
+  .pd-cz__hint:last-child {
+    margin-bottom: 0;
+    margin-top: 12px;
+  }
+
+  .pd-cz__hint--admin {
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__label {
+    margin: 16px 0 8px;
+    font: 700 0.78rem/1 var(--pd-font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.75);
+  }
+
+  .pd-cz__label:first-child {
+    margin-top: 0;
+  }
+
+  .pd-cz__label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 8px;
+  }
+
+  .pd-cz__label-row .pd-cz__label {
+    margin: 0;
+  }
+
+  .pd-cz__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pd-cz__chip {
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--pd-line);
+    background: rgb(255 255 255 / 0.04);
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+
+  .pd-cz__chip:hover {
+    border-color: rgb(from var(--pd-gold) r g b / 0.6);
+  }
+
+  .pd-cz__chip.is-active {
+    border-color: var(--pd-gold);
+    background: rgb(from var(--pd-gold) r g b / 0.14);
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__chip:disabled {
+    opacity: 0.35;
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+
+  .pd-cz__chip small {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.75;
+  }
+
+  .pd-cz__chip small:empty {
+    display: none;
+  }
+
+  .pd-cz__chips--small .pd-cz__chip {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 0.8rem;
+  }
+
+  .pd-cz__chips--size .pd-cz__chip {
+    min-width: 64px;
+    text-align: center;
+  }
+
+  .pd-cz__chip--font {
+    font-size: 1.05rem;
+  }
+
+  .pd-cz__tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    background: rgb(0 0 0 / 0.25);
+  }
+
+  .pd-cz__tabs button {
+    min-height: 40px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: rgb(255 255 255 / 0.7);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .pd-cz__tabs button.is-active {
+    background: var(--pd-navy-2);
+    color: var(--pd-gold);
+    box-shadow: inset 0 0 0 1px rgb(from var(--pd-gold) r g b / 0.5);
+  }
+
+  .pd-cz__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--pd-line);
+    border-radius: 10px;
+    background: rgb(0 0 0 / 0.2);
+  }
+
+  .pd-cz__search svg {
+    width: 18px;
+    flex: none;
+    color: rgb(255 255 255 / 0.5);
+  }
+
+  .pd-cz__search input,
+  .pd-cz__input {
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+  }
+
+  .pd-cz__input {
+    padding: 0 14px;
+    border: 1px solid var(--pd-line);
+    border-radius: 10px;
+    background: rgb(0 0 0 / 0.2);
+  }
+
+  .pd-cz__input:focus,
+  .pd-cz__search:focus-within {
+    border-color: var(--pd-gold);
+  }
+
+  .pd-cz__filter-note {
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  .pd-cz__filter-note:empty {
+    display: none;
+  }
+
+  .pd-cz__designs {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 10px;
+  }
+
+  .pd-cz__design {
+    width: 100%;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--pd-line);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.03);
+    color: inherit;
+    cursor: pointer;
+    text-align: center;
+    font: inherit;
+  }
+
+  .pd-cz__design.is-active {
+    border-color: var(--pd-gold);
+    box-shadow: 0 0 0 1px var(--pd-gold);
+  }
+
+  .pd-cz__design-img {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: rgb(0 0 0 / 0.25);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+
+  .pd-cz__design-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .pd-cz__design-img svg {
+    width: 52%;
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__design-name {
+    font-size: 0.78rem;
+    line-height: 1.25;
+  }
+
+  .pd-cz__empty {
+    margin: 14px 0 0;
+    font-size: 0.88rem;
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  .pd-cz__more {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .pd-cz__link {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--pd-gold);
+    font: inherit;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .pd-cz__swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pd-cz__swatch {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid rgb(255 255 255 / 0.15);
+    background: var(--c, #8a8f98) center / cover;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 3px var(--pd-navy);
+  }
+
+  .pd-cz__swatches--lg .pd-cz__swatch {
+    width: 46px;
+    height: 46px;
+  }
+
+  .pd-cz__swatch.is-active {
+    border-color: var(--pd-gold);
+  }
+
+  .pd-cz__swatch:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .pd-cz__swatch:disabled::after {
+    content: '';
+    position: absolute;
+    inset: 45% -2px auto;
+    height: 2px;
+    background: #fff;
+    transform: rotate(-45deg);
+  }
+
+  .pd-cz__drop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 26px 16px;
+    border: 1.5px dashed rgb(from var(--pd-gold) r g b / 0.6);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .pd-cz__drop svg {
+    width: 22px;
+    color: var(--pd-gold);
+    transform: rotate(-90deg);
+  }
+
+  .pd-cz__drop input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .pd-cz__warn {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgb(226 80 80 / 0.14);
+    border: 1px solid rgb(226 80 80 / 0.45);
+    font-size: 0.82rem;
+  }
+
+  .pd-cz__confirm {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 14px;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    cursor: pointer;
+  }
+
+  .pd-cz__confirm input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    accent-color: var(--pd-gold);
+  }
+
+  .pd-cz__garments {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .pd-cz__garment {
+    display: grid;
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid var(--pd-line);
+    border-radius: 12px;
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.8rem;
+  }
+
+  .pd-cz__garment.is-active {
+    border-color: var(--pd-gold);
+    box-shadow: 0 0 0 1px var(--pd-gold);
+  }
+
+  .pd-cz__garment-img {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgb(0 0 0 / 0.25);
+  }
+
+  .pd-cz__garment-img img,
+  .pd-cz__garment-img svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pd-cz__garment-price {
+    color: var(--pd-gold);
+  }
+
+  .pd-cz__qty {
+    display: inline-flex;
+    border: 1px solid var(--pd-line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .pd-cz__qty button {
+    width: 46px;
+    min-height: 46px;
+    border: 0;
+    background: rgb(255 255 255 / 0.05);
+    color: inherit;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+
+  .pd-cz__qty input {
+    width: 56px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: center;
+    font: inherit;
+    font-size: 16px;
+    appearance: textfield;
+  }
+
+  .pd-cz__qty input::-webkit-inner-spin-button {
+    appearance: none;
+  }
+
+  .pd-cz__summary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    margin: 0;
+    font-size: 0.88rem;
+  }
+
+  .pd-cz__summary dt {
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  .pd-cz__summary dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .pd-cz__nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .pd-cz__nav .pd-btn {
+    min-height: 44px;
+  }
+
+  .pd-cz__nav svg {
+    width: 14px;
+  }
+
+  .pd-cz__error {
+    margin: 12px 0 0;
+    color: #ff9c9c;
+    font-size: 0.88rem;
+  }
+
+  .pd-cz__error:empty {
+    display: none;
+  }
+
+  .pd-cz__submit {
+    width: 100%;
+    margin-top: 14px;
+    min-height: 56px;
+    font-size: 1.05rem;
+  }
+
+  .pd-cz__submit svg {
+    width: 16px;
+  }
+
+  .pd-cz__submit[aria-busy='true'] {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .pd-cz__tagline {
+    margin: 18px 0 0;
+    text-align: center;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+  }
+
+  .pd-cz__bar {
+    display: none;
+  }
+
+  /* ---------- Size guide dialog ---------- */
+  .pd-cz__dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100dvh - 48px);
+    padding: 0;
+    border: 1px solid var(--pd-line);
+    border-radius: 16px;
+    background: var(--pd-navy-2);
+    color: var(--pd-text);
+  }
+
+  .pd-cz__dialog::backdrop {
+    background: rgb(4 8 16 / 0.7);
+  }
+
+  .pd-cz__dialog-inner {
+    padding: 20px 22px 24px;
+  }
+
+  .pd-cz__dialog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .pd-cz__dialog-head h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .pd-cz__close {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--pd-line);
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+
+  .pd-cz__rte {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .pd-cz__rte table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .pd-cz__rte th,
+  .pd-cz__rte td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--pd-line);
+    text-align: left;
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 989px) {
+    .pd-cz {
+      padding-top: 0;
+      padding-bottom: 110px;
+    }
+
+    .pd-cz__grid {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .pd-cz__grid.pd__inner {
+      padding-inline: 0;
+    }
+
+    .pd-cz__panel {
+      padding-inline: 16px;
+    }
+
+    .pd-cz__stage-col {
+      top: var(--header-height, 0px);
+      z-index: 3;
+    }
+
+    .pd-cz__stage {
+      border-radius: 0;
+      border-inline: 0;
+      border-top: 0;
+      padding: 10px 12px;
+      background: var(--pd-navy);
+      box-shadow: 0 12px 24px rgb(0 0 0 / 0.35);
+    }
+
+    .pd-cz__canvas {
+      aspect-ratio: auto;
+      height: min(38svh, 360px);
+    }
+
+    .pd-cz__stage-bottom .pd-cz__toggle,
+    .pd-cz__notice {
+      display: none;
+    }
+
+    .pd-cz__seg button {
+      padding: 8px 11px;
+    }
+
+    .pd-cz__skin {
+      width: 22px;
+      height: 22px;
+    }
+
+    .pd-cz__stage-bottom {
+      justify-content: center;
+    }
+
+    .pd-cz__submit {
+      display: none;
+    }
+
+    .pd-cz__bar {
+      position: fixed;
+      inset: auto 0 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgb(from var(--pd-navy) r g b / 0.96);
+      border-top: 1px solid var(--pd-line);
+      backdrop-filter: blur(8px);
+    }
+
+    .pd-cz__bar-price {
+      margin: 0;
+      font: 700 1.25rem/1.1 var(--pd-font-display);
+      color: var(--pd-gold);
+    }
+
+    .pd-cz__bar-step {
+      margin: 2px 0 0;
+      font-size: 0.75rem;
+      color: rgb(255 255 255 / 0.6);
+    }
+
+    .pd-cz__bar .pd-btn {
+      min-width: 150px;
+    }
+  }
+
+  @media (max-width: 989px) and (max-height: 640px) {
+    .pd-cz__canvas {
+      height: 30svh;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Create Your Gear",
+  "tag": "div",
+  "class": "pd-cz-section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Create your gear" },
+    {
+      "type": "select",
+      "id": "garment_type",
+      "label": "Garment shape on the avatar",
+      "info": "Auto reads the product type and title. A product metafield custom.garment_type overrides this.",
+      "default": "auto",
+      "options": [
+        { "value": "auto", "label": "Auto-detect" },
+        { "value": "tee", "label": "T-shirt" },
+        { "value": "longsleeve", "label": "Long sleeve / rash guard" },
+        { "value": "hoodie", "label": "Hoodie / sweatshirt" },
+        { "value": "tank", "label": "Tank top" },
+        { "value": "crop", "label": "Crop top" },
+        { "value": "jersey", "label": "Sports jersey" },
+        { "value": "hat", "label": "Hat" },
+        { "value": "pants", "label": "Sweatpants / joggers" },
+        { "value": "shorts", "label": "Shorts" }
+      ]
+    },
+    { "type": "collection", "id": "garments_collection", "label": "Garments collection", "info": "Customizable products shoppers can switch between in step 1." },
+    { "type": "header", "content": "Connection & branch" },
+    {
+      "type": "textarea",
+      "id": "connections",
+      "label": "Connections (one per line)",
+      "default": "I Am a Veteran\nI Support Veterans\nVeteran Family\nProud Parent\nProud Spouse\nProud Child\nProud Sibling\nProud Grandparent\nHonor Our Fallen\nPatriotic"
+    },
+    {
+      "type": "textarea",
+      "id": "branches",
+      "label": "Branches (one per line)",
+      "default": "Army\nNavy\nAir Force\nMarines\nCoast Guard\nSpace Force\nGeneral Veteran\nPatriotic / All Branches"
+    },
+    { "type": "header", "content": "Design library" },
+    {
+      "type": "textarea",
+      "id": "categories",
+      "label": "Design categories (one per line)",
+      "default": "Featured\nBest Sellers\nNew Designs\nMilitary Branch\nVeteran Family\nHonor Our Fallen\nPatriotic\nFourth of July"
+    },
+    {
+      "type": "paragraph",
+      "content": "Add designs as blocks (up to 50). For a bigger library, create a metaobject with fields title, image, connection, branch and category, and enter its type below. Leave connection or branch empty on a design to show it for everyone. Separate several values with commas."
+    },
+    { "type": "text", "id": "metaobject_type", "label": "Design metaobject type", "info": "e.g. pd_design" },
+    { "type": "range", "id": "page_size", "label": "Designs per page", "min": 6, "max": 30, "step": 3, "default": 12 },
+    { "type": "header", "content": "Custom text" },
+    { "type": "checkbox", "id": "allow_text", "label": "Allow custom text", "default": true },
+    { "type": "range", "id": "text_max", "label": "Character limit", "min": 6, "max": 40, "step": 1, "default": 24 },
+    { "type": "font_picker", "id": "text_font_1", "label": "Font 1", "default": "oswald_n4" },
+    { "type": "font_picker", "id": "text_font_2", "label": "Font 2", "default": "work_sans_n4" },
+    { "type": "font_picker", "id": "text_font_3", "label": "Font 3", "default": "anonymous_pro_n4" },
+    {
+      "type": "textarea",
+      "id": "text_colors",
+      "label": "Text colors (Name:#hex, one per line)",
+      "default": "White:#ffffff\nBlack:#111111\nGold:#e2b74a\nRed:#b22234\nNavy:#1b2a47\nDesert Tan:#c2a878"
+    },
+    { "type": "header", "content": "Uploads" },
+    { "type": "checkbox", "id": "allow_upload", "label": "Allow artwork uploads", "default": true },
+    { "type": "number", "id": "min_upload_px", "label": "Warn below this width (px)", "default": 1500 },
+    {
+      "type": "text",
+      "id": "upload_notice",
+      "label": "Upload confirmation",
+      "default": "I own or have permission to use this image. I understand it may be reviewed before production."
+    },
+    { "type": "header", "content": "Approved print locations" },
+    { "type": "paragraph", "content": "Only locations that fit the garment are shown. A product metafield custom.print_locations (e.g. center_chest, full_back) limits them per product." },
+    { "type": "checkbox", "id": "pl_center_chest", "label": "Center chest", "default": true },
+    { "type": "checkbox", "id": "pl_left_chest", "label": "Left chest", "default": true },
+    { "type": "checkbox", "id": "pl_full_front", "label": "Full front", "default": true },
+    { "type": "checkbox", "id": "pl_upper_back", "label": "Upper back", "default": true },
+    { "type": "checkbox", "id": "pl_full_back", "label": "Full back", "default": true },
+    { "type": "checkbox", "id": "pl_hat_front", "label": "Hat front", "default": true },
+    { "type": "checkbox", "id": "pl_left_leg", "label": "Left pant leg", "default": true },
+    { "type": "checkbox", "id": "pl_right_leg", "label": "Right pant leg", "default": true },
+    { "type": "checkbox", "id": "pl_shorts_leg", "label": "Shorts leg", "default": true },
+    { "type": "header", "content": "Customization fee" },
+    { "type": "product", "id": "fee_product", "label": "Fee product", "info": "Optional. A hidden product whose price is added once per item when a fee applies." },
+    { "type": "checkbox", "id": "fee_text", "label": "Charge for custom text", "default": true },
+    { "type": "checkbox", "id": "fee_upload", "label": "Charge for uploaded artwork", "default": true },
+    { "type": "checkbox", "id": "fee_artwork", "label": "Charge for our designs", "default": false },
+    { "type": "header", "content": "Size guide & notices" },
+    { "type": "page", "id": "size_guide_page", "label": "Size guide page" },
+    {
+      "type": "richtext",
+      "id": "size_guide_text",
+      "label": "Size guide (used when no page is chosen)",
+      "default": "<p>Add your size chart here, or choose a size guide page in the theme editor.</p>"
+    },
+    {
+      "type": "textarea",
+      "id": "avatar_notice",
+      "label": "Avatar notice",
+      "default": "Avatar previews are for visual design reference and do not represent an exact sizing or fit simulation. Please use the size guide."
+    },
+    {
+      "type": "text",
+      "id": "approval_text",
+      "label": "Approval checkbox",
+      "default": "I've reviewed my garment, design, print location and size."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "design",
+      "name": "Design",
+      "limit": 50,
+      "settings": [
+        { "type": "text", "id": "title", "label": "Design name", "default": "Design" },
+        { "type": "image_picker", "id": "image", "label": "Artwork", "info": "Transparent PNG works best." },
+        { "type": "text", "id": "connection", "label": "Connections", "info": "Comma separated. Empty = all." },
+        { "type": "text", "id": "branch", "label": "Branches", "info": "Comma separated. Empty = all." },
+        { "type": "text", "id": "category", "label": "Categories", "info": "Comma separated, e.g. Featured, Patriotic" }
+      ]
+    }
+  ]
+}
+{% endschema %}

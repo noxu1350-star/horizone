@@ -1,0 +1,117 @@
+{
+  "sections": {
+    "main": {
+      "type": "pd-customizer",
+      "blocks": {
+        "d_wun": {
+          "type": "design",
+          "settings": { "title": "Wun Too Tree", "category": "Featured, New Designs" }
+        },
+        "d_army_vet": {
+          "type": "design",
+          "settings": { "title": "Army Veteran", "connection": "I Am a Veteran", "branch": "Army", "category": "Featured, Military Branch" }
+        },
+        "d_navy_vet": {
+          "type": "design",
+          "settings": { "title": "Navy Veteran", "connection": "I Am a Veteran", "branch": "Navy", "category": "Military Branch" }
+        },
+        "d_af_vet": {
+          "type": "design",
+          "settings": { "title": "Air Force Veteran", "connection": "I Am a Veteran", "branch": "Air Force", "category": "Military Branch" }
+        },
+        "d_usmc_vet": {
+          "type": "design",
+          "settings": { "title": "Marines Veteran", "connection": "I Am a Veteran", "branch": "Marines", "category": "Best Sellers, Military Branch" }
+        },
+        "d_family": {
+          "type": "design",
+          "settings": { "title": "Proud Military Family", "connection": "Veteran Family, Proud Parent, Proud Spouse, Proud Child, Proud Sibling, Proud Grandparent", "category": "Veteran Family, Best Sellers" }
+        },
+        "d_support": {
+          "type": "design",
+          "settings": { "title": "I Support Veterans", "connection": "I Support Veterans", "category": "Best Sellers" }
+        },
+        "d_fallen": {
+          "type": "design",
+          "settings": { "title": "Honor Our Fallen", "connection": "Honor Our Fallen", "category": "Honor Our Fallen" }
+        },
+        "d_july": {
+          "type": "design",
+          "settings": { "title": "Fourth of July", "connection": "Patriotic", "category": "Patriotic, Fourth of July" }
+        },
+        "d_mission": {
+          "type": "design",
+          "settings": { "title": "No Veteran Forgotten", "category": "Featured" }
+        }
+      },
+      "block_order": ["d_wun", "d_army_vet", "d_navy_vet", "d_af_vet", "d_usmc_vet", "d_family", "d_support", "d_fallen", "d_july", "d_mission"],
+      "settings": {
+        "eyebrow": "Create your gear",
+        "garment_type": "auto",
+        "allow_text": true,
+        "text_max": 24,
+        "allow_upload": true,
+        "min_upload_px": 1500,
+        "page_size": 12
+      }
+    },
+    "faq": {
+      "type": "pd-faq",
+      "blocks": {
+        "q_place": {
+          "type": "question",
+          "settings": {
+            "question": "Can I reposition or resize the design?",
+            "answer": "<p>To maintain consistent print quality, all designs are automatically sized and positioned within approved print areas. You may select from available approved locations but cannot manually move or resize artwork.</p>"
+          }
+        },
+        "q_upload": {
+          "type": "question",
+          "settings": {
+            "question": "Can I upload artwork?",
+            "answer": "<p>Yes. Upload a PNG, JPG or WEBP image in the Design step. It is automatically centered and scaled inside the print area you choose.</p>"
+          }
+        },
+        "q_quality": {
+          "type": "question",
+          "settings": {
+            "question": "What image quality is required?",
+            "answer": "<p>For a sharp print, upload an image at least 1500 pixels wide. A transparent PNG works best. You'll see a warning if your file is low resolution.</p>"
+          }
+        },
+        "q_review": {
+          "type": "question",
+          "settings": {
+            "question": "Will uploads be reviewed?",
+            "answer": "<p>Uploaded artwork may be reviewed before production. We'll contact you if anything needs to change.</p>"
+          }
+        },
+        "q_logos": {
+          "type": "question",
+          "settings": {
+            "question": "Can I use copyrighted logos?",
+            "answer": "<p>Only if you own them or have permission to use them. By uploading artwork you confirm you have the right to use it.</p>"
+          }
+        },
+        "q_avatar": {
+          "type": "question",
+          "settings": {
+            "question": "Does the avatar show the exact fit?",
+            "answer": "<p>No. The avatar is a design preview, not a sizing or fit simulation. Please use the size guide in the Size step.</p>"
+          }
+        }
+      },
+      "block_order": ["q_place", "q_upload", "q_quality", "q_review", "q_logos", "q_avatar"],
+      "settings": {
+        "anchor": "customize-faq",
+        "eyebrow": "Good to know",
+        "heading": "Customizing questions",
+        "text": "<p>Need help with your design? Our veteran-owned team is here to help.</p>",
+        "email": "support@phonetic-designs.com",
+        "phone": "321-345-8289",
+        "open_first": false
+      }
+    }
+  },
+  "order": ["main", "faq"]
+}
